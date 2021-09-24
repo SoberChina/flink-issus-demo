@@ -1,0 +1,207 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>org.example</groupId>
+    <artifactId>flink-demo</artifactId>
+    <version>1.13.1</version>
+
+
+    <!-- Allow users to pass custom jcuda versions -->
+    <properties>
+        <jcuda.version>10.0.0</jcuda.version>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+        <hadoop.version>2.4.1</hadoop.version>
+        <logback.version>1.1.3</logback.version>
+        <!-- Need to use a user property here because the surefire
+             forkCount is not exposed as a property. With this we can set
+             it on the "mvn" commandline in travis. -->
+        <flink.forkCount>1C</flink.forkCount>
+        <!-- Allow overriding the fork behaviour for the expensive tests in flink-tests
+             to avoid process kills due to container limits on TravisCI -->
+        <flink.forkCountTestPackage>${flink.forkCount}</flink.forkCountTestPackage>
+        <flink.reuseForks>true</flink.reuseForks>
+        <flink.shaded.version>13.0</flink.shaded.version>
+        <guava.version>18.0</guava.version>
+        <akka.version>2.5.21</akka.version>
+        <target.java.version>1.8</target.java.version>
+        <slf4j.version>1.7.15</slf4j.version>
+        <log4j.version>2.14.1</log4j.version>
+        <!-- Overwrite default values from parent pom.
+             Intellij is (sometimes?) using those values to choose target language level
+             and thus is changing back to java 1.6 on each maven re-import -->
+        <maven.compiler.source>${target.java.version}</maven.compiler.source>
+        <maven.compiler.target>${target.java.version}</maven.compiler.target>
+        <scala.macros.version>2.1.1</scala.macros.version>
+        <!-- Default scala versions, must be overwritten by build profiles, so we set something
+        invalid here -->
+        <scala.version>2.11.12</scala.version>
+        <scala.binary.version>2.11</scala.binary.version>
+        <chill.version>0.7.6</chill.version>
+        <zookeeper.version>3.4.14</zookeeper.version>
+        <!-- Only the curator2 TestingServer works with ZK 3.4 -->
+        <curator.version>2.12.0</curator.version>
+        <jackson.version>2.12.1</jackson.version>
+        <prometheus.version>0.8.1</prometheus.version>
+        <avro.version>1.10.0</avro.version>
+        <javax.activation.api.version>1.2.0</javax.activation.api.version>
+        <jaxb.api.version>2.3.1</jaxb.api.version>
+        <junit.version>4.12</junit.version>
+        <mockito.version>2.21.0</mockito.version>
+        <powermock.version>2.0.4</powermock.version>
+        <hamcrest.version>1.3</hamcrest.version>
+        <py4j.version>0.10.8.1</py4j.version>
+        <beam.version>2.27.0</beam.version>
+        <protoc.version>3.11.1</protoc.version>
+        <arrow.version>0.16.0</arrow.version>
+        <japicmp.skip>false</japicmp.skip>
+        <flink.convergence.phase>validate</flink.convergence.phase>
+        <!--
+            Keeping the MiniKDC version fixed instead of taking hadoop version dependency
+            to support testing Kafka, ZK etc., modules that does not have Hadoop dependency
+            Starting Hadoop 3, org.apache.kerby will be used instead of MiniKDC. We may have
+            to revisit the impact at that time.
+        -->
+        <minikdc.version>3.2.0</minikdc.version>
+        <generated.docs.dir>./docs/layouts/shortcodes/generated</generated.docs.dir>
+        <hive.version>2.3.4</hive.version>
+        <hive-2.2.0-orc-version>1.4.3</hive-2.2.0-orc-version>
+        <orc.version>1.5.6</orc.version>
+        <!--
+            Hive 2.3.4 relies on Hadoop 2.7.2 and later versions.
+            For Hadoop 2.7, the minor Hadoop version supported for flink-shaded-hadoop-2-uber is 2.7.5
+        -->
+        <hivemetastore.hadoop.version>2.7.5</hivemetastore.hadoop.version>
+        <japicmp.referenceVersion>1.13.0</japicmp.referenceVersion>
+        <japicmp.outputDir>tools/japicmp-output</japicmp.outputDir>
+        <spotless.version>2.4.2</spotless.version>
+
+        <!-- Can be set to any value to reproduce a specific build. -->
+        <test.randomization.seed/>
+        <test.unit.pattern>**/*Test.*</test.unit.pattern>
+        <fast.json.version>1.2.76</fast.json.version>
+    </properties>
+
+    <dependencies>
+
+        <!-- core dependencies -->
+
+        <dependency>
+            <groupId>org.apache.flink</groupId>
+            <artifactId>flink-streaming-java_${scala.binary.version}</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.flink</groupId>
+            <artifactId>flink-clients_${scala.binary.version}</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.flink</groupId>
+            <artifactId>flink-connector-elasticsearch7_2.11</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.alibaba</groupId>
+            <artifactId>fastjson</artifactId>
+            <version>${fast.json.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.flink</groupId>
+            <artifactId>flink-shaded-jackson</artifactId>
+            <version>${jackson.version}-${flink.shaded.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.flink</groupId>
+            <artifactId>flink-statebackend-rocksdb_${scala.binary.version}</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
+        <!-- Dependencies for MatrixVectorMul. We exclude native libraries
+        because it is not available in all the operating systems and architectures. Moreover,
+        we also want to enable users to compile and run MatrixVectorMul in different runtime environments.-->
+        <dependency>
+            <groupId>org.jcuda</groupId>
+            <artifactId>jcuda</artifactId>
+            <version>${jcuda.version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.jcuda</groupId>
+                    <artifactId>jcuda-natives</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+
+        <dependency>
+            <groupId>org.jcuda</groupId>
+            <artifactId>jcublas</artifactId>
+            <version>${jcuda.version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.jcuda</groupId>
+                    <artifactId>jcublas-natives</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+
+        <dependency>
+            <groupId>ch.qos.logback</groupId>
+            <artifactId>logback-core</artifactId>
+            <version>${logback.version}</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>ch.qos.logback</groupId>
+            <artifactId>logback-classic</artifactId>
+            <version>${logback.version}</version>
+            <scope>provided</scope>
+        </dependency>
+
+    </dependencies>
+
+    <build>
+        <plugins>
+
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <configuration>
+                    <source>8</source>
+                    <target>8</target>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-shade-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>shade</goal>
+                        </goals>
+                        <configuration>
+
+                            <filters>
+
+                            </filters>
+                            <transformers>
+                                <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+                                <mainClass>org.example.flink.demo.ApplicationDemo</mainClass>
+                                </transformer>
+                            </transformers>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+
+</project>
